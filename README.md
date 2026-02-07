@@ -9,13 +9,12 @@ This project implements the Aether congestion control algorithm, related simulat
 Modified Mahimahi emulator that simulates cellular uplink buffering.
 - **Build**: Run `./autogen.sh` inside this directory.
 
-## 2. Aether Core Algorithm (Core Code)
+## 2. Aether Algorithm 
 
 **Directory:** `Aether_CCA/`
 
-The core C implementation of the Aether algorithm (Kernel Style).
-- `aether_monitor`: Monitors packet dwell time.
-- `aether_bottleneck_detector`: Detects uplink vs internet bottlenecks.
+- `aether_monitor`: Monitors for Aether.
+- `aether_bottleneck_detector`: Detects bottlenecks.
 - `aether_rate_controller`: Calculates capacity and sets congestion window.
 - `aether_cca`: Main integration module.
 
