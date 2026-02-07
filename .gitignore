@@ -1,0 +1,20 @@
+# Compilation artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+
+# Build artifacts
+Simulation_Tools/autom4te.cache/
+Simulation_Tools/config.log
+Simulation_Tools/config.status
+Simulation_Tools/Makefile
+Simulation_Tools/libtool
