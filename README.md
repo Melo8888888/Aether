@@ -13,11 +13,11 @@ Modified Mahimahi emulator that simulates cellular uplink buffering.
 
 **Directory:** `Aether_CCA/`
 
-The core C++ implementation of the Aether algorithm. This is the main contribution.
-- `aether_monitor`: Monitor for Aether.
-- `aether_bottleneck_detector`: Detects bottlenecks.
+The core C implementation of the Aether algorithm (Kernel Style).
+- `aether_monitor`: Monitors packet dwell time.
+- `aether_bottleneck_detector`: Detects uplink vs internet bottlenecks.
 - `aether_rate_controller`: Calculates capacity and sets congestion window.
-- `aether_cca`: Main class.
+- `aether_cca`: Main integration module.
 
 ## 3. Trace Dataset
 
