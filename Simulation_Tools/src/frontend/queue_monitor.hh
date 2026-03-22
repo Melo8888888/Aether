@@ -1,3 +1,5 @@
+/* -*-mode:c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+
 #ifndef QUEUE_MONITOR_HH
 #define QUEUE_MONITOR_HH
 
@@ -16,34 +18,23 @@
 
 namespace cellular_emulation {
 
-/**
- * @struct QueueMetrics
- * @brief Point-in-time queue metrics snapshot
- */
 struct QueueMetrics {
     uint64_t timestamp_ms = 0;
     
-    /* Driver queue metrics */
     size_t driver_queue_size = 0;
     size_t driver_queue_bytes = 0;
     uint64_t driver_head_dwell_ms = 0;
     
-    /* Modem buffer metrics */
     size_t modem_buffer_size = 0;
     size_t modem_buffer_bytes = 0;
     
-    /* Flow metrics */
     uint64_t packets_received = 0;
     uint64_t packets_transferred = 0;
     uint64_t packets_transmitted = 0;
     uint64_t packets_dropped = 0;
     
-    /* Backpressure */
     bool backpressure_active = false;
     
-    /**
-     * @brief Format as CSV line
-     */
     std::string to_csv_line() const
     {
         std::ostringstream oss;
@@ -68,18 +59,8 @@ struct QueueMetrics {
     }
 };
 
-/**
- * @class Histogram
- * @brief Simple histogram for distribution analysis
- */
 class Histogram {
 public:
-    /**
-     * @brief Construct histogram with specified bins
-     * @param num_bins Number of bins
-     * @param min_value Minimum value
-     * @param max_value Maximum value
-     */
     Histogram(size_t num_bins, double min_value, double max_value)
         : num_bins_(num_bins),
           min_value_(min_value),
@@ -94,10 +75,6 @@ public:
     {
     }
     
-    /**
-     * @brief Add a value to the histogram
-     * @param value Value to add
-     */
     void add(double value)
     {
         count_++;
@@ -106,7 +83,6 @@ public:
         min_seen_ = std::min(min_seen_, value);
         max_seen_ = std::max(max_seen_, value);
         
-        /* Determine bin */
         if (value < min_value_) {
             bins_[0]++;
         } else if (value >= max_value_) {
@@ -118,22 +94,13 @@ public:
         }
     }
     
-    /**
-     * @brief Get count of samples
-     */
     size_t count() const { return count_; }
     
-    /**
-     * @brief Get mean value
-     */
     double mean() const 
     { 
         return (count_ > 0) ? (sum_ / static_cast<double>(count_)) : 0.0; 
     }
     
-    /**
-     * @brief Get standard deviation
-     */
     double stddev() const
     {
         if (count_ < 2) return 0.0;
@@ -142,21 +109,9 @@ public:
         return (variance > 0.0) ? std::sqrt(variance) : 0.0;
     }
     
-    /**
-     * @brief Get minimum seen value
-     */
     double min() const { return (count_ > 0) ? min_seen_ : 0.0; }
-    
-    /**
-     * @brief Get maximum seen value
-     */
     double max() const { return (count_ > 0) ? max_seen_ : 0.0; }
     
-    /**
-     * @brief Get percentile value
-     * @param p Percentile (0.0 to 1.0)
-     * @return Estimated percentile value
-     */
     double percentile(double p) const
     {
         if (count_ == 0) return 0.0;
@@ -167,7 +122,6 @@ public:
         for (size_t i = 0; i < num_bins_; ++i) {
             cumulative += bins_[i];
             if (cumulative >= target) {
-                /* Return mid-point of this bin */
                 return min_value_ + (static_cast<double>(i) + 0.5) * bin_width_;
             }
         }
@@ -175,14 +129,8 @@ public:
         return max_value_;
     }
     
-    /**
-     * @brief Get bin counts
-     */
     const std::vector<size_t>& bins() const { return bins_; }
     
-    /**
-     * @brief Reset histogram
-     */
     void reset()
     {
         std::fill(bins_.begin(), bins_.end(), 0);
@@ -193,11 +141,6 @@ public:
         max_seen_ = std::numeric_limits<double>::lowest();
     }
     
-    /**
-     * @brief Generate ASCII visualization
-     * @param width Width of visualization
-     * @return ASCII art histogram
-     */
     std::string to_ascii(int width = 40) const
     {
         if (count_ == 0) return "(empty histogram)\n";
@@ -228,9 +171,6 @@ public:
         return oss.str();
     }
     
-    /**
-     * @brief Get statistics summary
-     */
     std::string summary() const
     {
         std::ostringstream oss;
@@ -259,80 +199,52 @@ private:
     double max_seen_;
 };
 
-/**
- * @class QueueMonitor
- * @brief Comprehensive queue monitoring system
- */
 class QueueMonitor {
 public:
-    /**
-     * @brief Construct monitor
-     * @param sampling_interval_ms Interval between metric samples
-     */
     explicit QueueMonitor(uint64_t sampling_interval_ms = 10)
         : sampling_interval_ms_(sampling_interval_ms),
           last_sample_time_(0),
           metrics_log_(),
-          dwell_time_histogram_(50, 0.0, 500.0),    /* 0-500ms in 50 bins */
-          queue_size_histogram_(32, 0.0, 128.0),    /* 0-128 packets */
+          dwell_time_histogram_(50, 0.0, 500.0),
+          queue_size_histogram_(32, 0.0, 128.0),
           enabled_(true),
           mutex_()
     {
         metrics_log_.reserve(10000);
     }
     
-    /**
-     * @brief Record a metrics snapshot
-     * @param metrics Current metrics
-     */
     void record(const QueueMetrics& metrics)
     {
         if (!enabled_) return;
         
         std::lock_guard<std::mutex> lock(mutex_);
         
-        /* Check sampling interval */
         if (metrics.timestamp_ms - last_sample_time_ < sampling_interval_ms_) {
             return;
         }
         last_sample_time_ = metrics.timestamp_ms;
         
-        /* Store snapshot */
         metrics_log_.push_back(metrics);
         
-        /* Update histograms */
         dwell_time_histogram_.add(static_cast<double>(metrics.driver_head_dwell_ms));
         queue_size_histogram_.add(static_cast<double>(metrics.driver_queue_size));
     }
     
-    /**
-     * @brief Get all recorded metrics
-     */
     const std::vector<QueueMetrics>& metrics_log() const
     {
         return metrics_log_;
     }
     
-    /**
-     * @brief Get dwell time histogram
-     */
     const Histogram& dwell_time_histogram() const
     {
         return dwell_time_histogram_;
     }
     
-    /**
-     * @brief Get queue size histogram
-     */
     const Histogram& queue_size_histogram() const
     {
         return queue_size_histogram_;
     }
     
-    /**
-     * @brief Export metrics to CSV file
-     * @param filepath Output file path
-     */
     void export_csv(const std::string& filepath) const
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -347,10 +259,6 @@ public:
         }
     }
     
-    /**
-     * @brief Generate statistics report
-     * @return Multi-line report string
-     */
     std::string generate_report() const
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -358,7 +266,6 @@ public:
         std::ostringstream oss;
         
         oss << "=== Queue Monitor Report ===\n\n";
-        
         oss << "Samples: " << metrics_log_.size() << "\n";
         
         if (!metrics_log_.empty()) {
@@ -375,7 +282,6 @@ public:
         oss << queue_size_histogram_.summary() << "\n";
         oss << queue_size_histogram_.to_ascii(30) << "\n";
         
-        /* Calculate throughput if we have enough samples */
         if (metrics_log_.size() >= 2) {
             const auto& first = metrics_log_.front();
             const auto& last = metrics_log_.back();
@@ -394,9 +300,6 @@ public:
         return oss.str();
     }
     
-    /**
-     * @brief Clear all recorded data
-     */
     void clear()
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -406,14 +309,7 @@ public:
         last_sample_time_ = 0;
     }
     
-    /**
-     * @brief Enable/disable monitoring
-     */
     void set_enabled(bool enabled) { enabled_ = enabled; }
-    
-    /**
-     * @brief Check if monitoring is enabled
-     */
     bool is_enabled() const { return enabled_; }
 
 private:
@@ -426,16 +322,8 @@ private:
     mutable std::mutex mutex_;
 };
 
-/**
- * @class EventLogger
- * @brief Log queue events for debugging
- */
 class EventLogger {
 public:
-    /**
-     * @enum EventType
-     * @brief Types of queue events
-     */
     enum class EventType {
         PACKET_ENQUEUE,
         PACKET_DEQUEUE,
@@ -446,10 +334,6 @@ public:
         ERROR
     };
     
-    /**
-     * @struct Event
-     * @brief A single log event
-     */
     struct Event {
         uint64_t timestamp_ms;
         EventType type;
@@ -473,10 +357,6 @@ public:
         }
     };
     
-    /**
-     * @brief Construct logger
-     * @param max_events Maximum events to keep
-     */
     explicit EventLogger(size_t max_events = 1000)
         : max_events_(max_events),
           events_(),
@@ -485,9 +365,6 @@ public:
     {
     }
     
-    /**
-     * @brief Log an event
-     */
     void log(uint64_t timestamp, EventType type, 
              const std::string& message, size_t value = 0)
     {
@@ -497,16 +374,11 @@ public:
         
         events_.push_back({timestamp, type, message, value});
         
-        /* Limit size */
         while (events_.size() > max_events_) {
             events_.pop_front();
         }
     }
     
-    /**
-     * @brief Get recent events
-     * @param count Number of events to return
-     */
     std::vector<Event> recent_events(size_t count) const
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -521,9 +393,6 @@ public:
         return result;
     }
     
-    /**
-     * @brief Export events to file
-     */
     void export_log(const std::string& filepath) const
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -536,9 +405,6 @@ public:
         }
     }
     
-    /**
-     * @brief Clear all events
-     */
     void clear()
     {
         std::lock_guard<std::mutex> lock(mutex_);

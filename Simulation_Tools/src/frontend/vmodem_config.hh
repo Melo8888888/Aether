@@ -1,3 +1,5 @@
+/* -*-mode:c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+
 #ifndef VMODEM_CONFIG_HH
 #define VMODEM_CONFIG_HH
 
@@ -7,59 +9,15 @@
 
 namespace cellular_emulation {
 
-/**
- * @struct VModemConfig
- * @brief Configuration for Virtual Modem Transmission Buffer
- */
 struct VModemConfig {
-    /**
-     * @brief Maximum number of packets the modem buffer can hold
-     * 
-     * This represents the hardware limitation of the modem chip's
-     * internal transmission buffer.
-     * Default: 100 packets (based on typical modem hardware specs)
-     */
     size_t max_buffer_size = 100;
-
-    /**
-     * @brief Maximum total bytes (0 = unlimited)
-     * Default: 0
-     */
     size_t max_buffer_bytes = 0;
-
-    /**
-     * @brief Hysteresis threshold for backpressure release
-     * 
-     * Backpressure is released when buffer size falls below
-     * (max_buffer_size * hysteresis_ratio).
-     * This prevents oscillation at the boundary.
-     * Default: 0.8 (release when 80% full)
-     */
-    double hysteresis_ratio = 0.8;
-
-    /**
-     * @brief Enable transmission scheduling optimization
-     * Default: true
-     */
+    double hysteresis_ratio = 0.8;        /* release backpressure at this fill level */
     bool enable_scheduling = true;
-
-    /**
-     * @brief Minimum transmission batch size
-     * 
-     * For efficiency, modem may wait to accumulate this many
-     * packets before initiating transmission.
-     * Default: 1 (no batching)
-     */
     size_t min_batch_size = 1;
 
-    /**
-     * @brief Default constructor
-     */
     VModemConfig() = default;
 
-    /**
-     * @brief Get string representation
-     */
     std::string to_string() const
     {
         std::ostringstream oss;
@@ -71,10 +29,6 @@ struct VModemConfig {
         return oss.str();
     }
 
-    /**
-     * @brief Validate configuration
-     * @return true if valid
-     */
     bool validate() const
     {
         if (max_buffer_size == 0) return false;

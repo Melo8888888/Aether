@@ -1,23 +1,15 @@
+/* -*-mode:c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 #ifndef CELLULAR_EMULATION_HH
 #define CELLULAR_EMULATION_HH
 
-/* Core components */
 #include "virtual_driver_queue.hh"
 #include "virtual_modem_buffer.hh"
 #include "two_tier_queue_manager.hh"
-
-/* Configuration */
 #include "vdqueue_config.hh"
 #include "vmodem_config.hh"
-
-/* Statistics */
 #include "vdqueue_stats.hh"
-
-/* Signal export */
 #include "signal_exporter.hh"
-
-/* Backpressure management */
 #include "backpressure_controller.hh"
 
 namespace cellular_emulation {
@@ -30,10 +22,6 @@ struct Version {
     static constexpr const char* NAME = "Aether Mahimahi Extension";
 };
 
-/**
- * @brief Create a queue manager with default Qualcomm SDX55 profile
- * @return Configured TwoTierQueueManager
- */
 inline TwoTierQueueManager create_default_manager()
 {
     TwoTierQueueConfig config;
@@ -41,11 +29,6 @@ inline TwoTierQueueManager create_default_manager()
     return TwoTierQueueManager(config);
 }
 
-/**
- * @brief Create a queue manager with specified modem profile
- * @param profile_name One of: "sdx55", "xmm7560", "exynos", "generic_lte", "5g_high"
- * @return Configured TwoTierQueueManager
- */
 inline TwoTierQueueManager create_manager_with_profile(const std::string& profile_name)
 {
     TwoTierQueueConfig config;
@@ -61,16 +44,12 @@ inline TwoTierQueueManager create_manager_with_profile(const std::string& profil
     } else if (profile_name == "5g" || profile_name == "5g_high") {
         config.driver_queue_config = ModemProfiles::high_throughput_5g();
     } else {
-        /* Default to Qualcomm profile */
         config.driver_queue_config = ModemProfiles::qualcomm_sdx55();
     }
     
     return TwoTierQueueManager(config);
 }
 
-/**
- * @brief Print library information to stdout
- */
 inline void print_info()
 {
     std::cout << "=================================\n";

@@ -8,7 +8,7 @@
 #define AETHER_GAMMA          5
 #define AETHER_ALPHA_NUM      6
 #define AETHER_ALPHA_DEN     10
-#define AETHER_C_THRESH      35   /* /10 => 3.5x */
+#define AETHER_C_THRESH      35
 #define AETHER_HIST_MAX       5
 
 struct aether_sample {
